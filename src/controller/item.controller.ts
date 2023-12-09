@@ -100,10 +100,20 @@ export async function autoSuggest(req: Request, res: Response) {
     const searchTerm = req.query.q as string;
     const regex = new RegExp(searchTerm, 'i');
 
-    // Limit the number of suggestions returned
-    const suggestions = await Item.find({ name: { $regex: regex } }).limit(10);
+    // Fetch items matching the search term
+    const items = await Item.find({ name: { $regex: regex } });
 
-    res.json(suggestions);
+    // Create a Set to track unique item names
+    const uniqueItemNames = new Set();
+
+    // Filter out duplicates based on item name
+    const uniqueItems = items.filter(item => {
+      const isDuplicate = uniqueItemNames.has(item.name);
+      uniqueItemNames.add(item.name);
+      return !isDuplicate;
+    }).slice(0, 10); // Limit the number of suggestions to 10
+
+    res.json(uniqueItems);
   } catch (error) {
     res.status(500).send(error);
   }
